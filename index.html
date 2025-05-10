@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Barfi</title>
+  <!--web-corner for website tab image-->
+  <link rel="icon" type="image/png" size="32*32" href="web-corner.png"/>
+  <style>
+    /* --- Global Styles & Themes --- */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      transition: background-color 0.3s, color 0.3s;
+      background-color: #ffffff;
+      color: #000;
+    }
+    body.dark-mode {
+      background-color: #121212;
+     color: #fff;
+    }
+
+    /* --- Header: Logo, App Name and Menu Icon --- */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      border-bottom: 1px solid #929191;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+    }
+    .logo {
+    background: url('Main icon.png');
+    background-size: contain;
+      width: 150px;
+      height: 150px;
+      margin-right: 10px;
+      display: fixed;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 18px;
+    }
+    .app-name {
+      font-size: 70px;
+      font-weight: bold;
+    }
+    .menu-icon {
+      font-size: 28px;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* --- Score Display --- */
+    #scoreContainer {
+      text-align: center;
+      margin: 10px 0;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    /* --- Main Game Area and default padding is 300 --- */
+    main {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 10px;
+      min-height: 500px;
+      background-color: rgba(0,0,0,0.02);
+    }
+    /* default bird size it 80 */
+    .bird {
+      width: 150px;
+      height: 150px;
+      margin: 5px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* --- Footer with Timer and Play Button --- */
+    footer {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 10px 20px;
+      border-top: 1px solid #ccc;
+      background-color: rgba(0,0,0,0.02);
+    }
+    footer button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #timerRound {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    /* --- Modal Overlay (for Menu, Game Over, Leaderboard) --- */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 3000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.8);
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    .modal-content {
+      background-color: #fff;
+      padding: 20px;
+      width: 80%;
+      max-width: 400px;
+      text-align: center;
+      border-radius: 8px;
+      opacity: 0;
+      transform: scale(0.8);
+      animation: popIn 0.5s forwards;
+    }
+    body.dark-mode .modal-content {
+      background-color: #333;
+      color: #fff;
+      border: 1px solid #555;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; } 
+      to { opacity: 1; }
+    }
+    @keyframes popIn {
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    /* Leaderboard list style */
+    #leaderboardList {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0;
+      text-align: left;
+      animation: fadeIn 1s forwards;
+      animation-delay: 0.5s;
+    }
+    #leaderboardList li {
+      margin: 5px 0;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header with Logo, App Name and Menu Icon -->
+  <header>
+    <div class="header-left">
+      <div class="logo">L</div>
+      <div class="app-name">Barfi</div>
+    </div>
+    <button id="menuIcon" class="menu-icon">&#9776;</button>
+  </header>
+
+  <!-- Score Display -->
+  <div id="scoreContainer">
+    Score: <span id="scoreDisplay">0</span>
+  </div>
+
+  <!-- Main Game Area -->
+  <main id="gameArea">
+    <!-- Birds will be injected here during rounds -->
+  </main>
+
+  <!-- Footer with Timer Round and Play Button -->
+  <footer>
+    <div id="timerRound">Timer round: <span id="roundTimeDisplay">--s</span></div>
+    <button id="playBtn">Play</button>
+  </footer>
+
+  <!-- Modal: Menu Overlay -->
+  <div id="menuModal" class="modal">
+    <div class="modal-content">
+      <h3>Menu</h3>
+      <button id="toggleThemeBtn">Toggle Dark/Light Mode</button>
+      <button id="showLeaderboardBtn">Show Leaderboard</button>
+      <br/><br/>
+      <button id="closeMenuBtn">Close</button>
+    </div>
+  </div>
+
+  <!-- Modal: Leaderboard -->
+  <div id="leaderboardModal" class="modal">
+    <div class="modal-content">
+      <h3>Leaderboard</h3>
+      <ul id="leaderboardList">
+        <!-- Leaderboard entries go here -->
+      </ul>
+      <button id="closeLeaderboardBtn">Close</button>
+    </div>
+  </div>
+
+  <!-- Modal: Game Over -->
+  <div id="gameOverModal" class="modal">
+    <div class="modal-content">
+      <h2>Game Over!</h2>
+      <p id="finalScoreText">Your final score is: 0</p>
+      <button id="closeGameOverBtn">Close</button>
+    </div>
+  </div>
+
+  <!-- Audio Elements -->
+  <audio id="bgMusic" src="bg.mp3" preload="auto" loop></audio>
+  <audio id="clickSound" src="click.mp3" preload="auto"></audio>
+  <audio id="gameOverSound" src="gameOver.mp3" preload="auto"></audio>
+
+  <script>
+    /* ----- Global Game Variables ----- */
+    let totalRounds = 6;
+    let currentRound = 0;
+    let score = 0;
+    let roundDuration = 1500; // ms; will reduce after each round (min = 500ms)
+    const minRoundDuration = 500;
+    let roundActive = false;
+    let roundTimerInterval;
+    let roundTimeout;
+
+    // Replace with your actual asset paths
+    const yellowBirdSrc = "yellowBird.jpg";
+    const redBirdSrc = "redBird.jpg";
+
+    /* ----- UI Element References ----- */
+    const playBtn = document.getElementById("playBtn");
+    const gameArea = document.getElementById("gameArea");
+    const scoreDisplay = document.getElementById("scoreDisplay");
+    const roundTimeDisplay = document.getElementById("roundTimeDisplay");
+    
+    const bgMusic = document.getElementById("bgMusic");
+    const clickSound = document.getElementById("clickSound");
+    const gameOverSound = document.getElementById("gameOverSound");
+
+    /* Modal Elements */
+    const menuModal = document.getElementById("menuModal");
+    const leaderboardModal = document.getElementById("leaderboardModal");
+    const gameOverModal = document.getElementById("gameOverModal");
+    const leaderboardList = document.getElementById("leaderboardList");
+    const finalScoreText = document.getElementById("finalScoreText");
+
+    /* Menu Buttons */
+    const menuIcon = document.getElementById("menuIcon");
+    const closeMenuBtn = document.getElementById("closeMenuBtn");
+    const toggleThemeBtn = document.getElementById("toggleThemeBtn");
+    const showLeaderboardBtn = document.getElementById("showLeaderboardBtn");
+
+    const closeLeaderboardBtn = document.getElementById("closeLeaderboardBtn");
+    const closeGameOverBtn = document.getElementById("closeGameOverBtn");
+
+    /* ----- Event Listeners for Modals and Theme ----- */
+    menuIcon.addEventListener("click", () => {
+      menuModal.style.display = "flex";
+    });
+    closeMenuBtn.addEventListener("click", () => {
+      menuModal.style.display = "none";
+    });
+    toggleThemeBtn.addEventListener("click", () => {
+      document.body.classList.toggle("dark-mode");
+      document.body.classList.toggle("light-mode");
+    });
+    showLeaderboardBtn.addEventListener("click", () => {
+      menuModal.style.display = "none";
+      updateLeaderboardDisplay();
+      leaderboardModal.style.display = "flex";
+    });
+    closeLeaderboardBtn.addEventListener("click", () => {
+      leaderboardModal.style.display = "none";
+    });
+    closeGameOverBtn.addEventListener("click", () => {
+      gameOverModal.style.display = "none";
+    });
+
+    /* ----- Play Button: Start the Next Round ----- */
+    playBtn.addEventListener("click", () => {
+      // If game is over, reset game
+      if (currentRound >= totalRounds) {
+        resetGame();
+      }
+      startRound();
+    });
+
+    /* ----- Game Round Functions ----- */
+    function startRound() {
+      // Play background music
+      if (bgMusic.paused) {
+        bgMusic.currentTime = 0;
+        bgMusic.play();
+      }
+      
+      // Disable Play button during a round
+      playBtn.disabled = true;
+      roundActive = true;
+      currentRound++;
+      gameArea.innerHTML = ""; // Clear game area
+
+      // Randomly select one index (of 0 to 5) for the red bird
+      const redIndex = Math.floor(Math.random() * 6);
+
+      for (let i = 0; i < 6; i++) {
+        const img = document.createElement("img");
+        img.className = "bird";
+        if (i === redIndex) {
+          img.src = redBirdSrc;
+          img.dataset.birdType = "red";
+        } else {
+          img.src = yellowBirdSrc;
+          img.dataset.birdType = "yellow";
+        }
+        img.addEventListener("click", onBirdClick);
+        gameArea.appendChild(img);
+      }
+      
+      // Start round timer display
+      const startTime = Date.now();
+      roundTimerInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(roundDuration - elapsed, 0);
+        roundTimeDisplay.textContent = (remaining / 1000).toFixed(1) + "s";
+      }, 50);
+
+      // End round automatically if time runs out
+      roundTimeout = setTimeout(endRound, roundDuration);
+    }
+
+    function onBirdClick(event) {
+      if (!roundActive) return;
+      roundActive = false;
+
+      // Stop the round timer
+      clearInterval(roundTimerInterval);
+      clearTimeout(roundTimeout);
+
+      // Play click sound
+      clickSound.currentTime = 0;
+      clickSound.play();
+
+      const birdType = event.target.dataset.birdType;
+      if (birdType === "red") {
+        score++;
+      } else if (birdType === "yellow") {
+        score -= 2;
+      }
+      updateScore();
+      endRound();
+    }
+
+    function endRound() {
+      roundActive = false;
+      clearInterval(roundTimerInterval);
+      // Increase difficulty by reducing round duration (to a minimum)
+      roundDuration = Math.max(roundDuration - 100, minRoundDuration);
+      // Clear game area for the next round
+      gameArea.innerHTML = "";
+      
+      // Check if game rounds are over
+      if (currentRound >= totalRounds) {
+        setTimeout(endGame, 300);
+      } else {
+        // Enable Play button for next round after a short delay
+        setTimeout(() => {
+          playBtn.disabled = false;
+          roundTimeDisplay.textContent = "--s";
+        }, 300);
+      }
+    }
+
+    function updateScore() {
+      scoreDisplay.textContent = score;
+    }
+
+    function endGame() {
+      bgMusic.pause();
+      gameArea.innerHTML = "";
+      playBtn.disabled = false;
+      finalScoreText.textContent = "Your final score is: " + score;
+      gameOverSound.currentTime = 0;
+      gameOverSound.play();
+      updateLeaderboard(score);
+      gameOverModal.style.display = "flex";
+    }
+
+    function resetGame() {
+      currentRound = 0;
+      score = 0;
+      roundDuration = 1500;
+      updateScore();
+      roundTimeDisplay.textContent = "--s";
+    }
+
+    /* ----- Leaderboard Functions (Using localStorage) ----- */
+    function updateLeaderboard(currentScore) {
+      let leaderboard = JSON.parse(localStorage.getItem("leaderboard")) || [];
+      leaderboard.push(score); // store final score
+      leaderboard.sort((a, b) => b - a);
+      leaderboard = leaderboard.slice(0, 5); // keep top 5
+      localStorage.setItem("leaderboard", JSON.stringify(leaderboard));
+    }
+
+    function updateLeaderboardDisplay() {
+      let leaderboard = JSON.parse(localStorage.getItem("leaderboard")) || [];
+      leaderboardList.innerHTML = "";
+      leaderboard.forEach((s, i) => {
+        const li = document.createElement("li");
+        li.textContent = (i + 1) + ". " + s;
+        leaderboardList.appendChild(li);
+      });
+    }
+  </script>
+</body>
+</html>
